@@ -5,4 +5,4 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 RAW_DATA_DIR = os.path.join(BASE_DIR, "..", "..", "data", "raw")
 FILE_PREFIX = "case-data-M"
 DATE_FORMAT = "%Y-%m-%d"
-REQUEST_TIMEOUT = 20
+DOWNLOAD_REQUEST_TIMEOUT = 20

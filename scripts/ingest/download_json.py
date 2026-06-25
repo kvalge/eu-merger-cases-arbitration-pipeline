@@ -5,13 +5,12 @@
 import os
 import json
 import logging
-import sys
 from datetime import datetime
-from pathlib import Path
 
 import requests
 
-from config.config import DATE_FORMAT, FILE_PREFIX, RAW_DATA_DIR, REQUEST_TIMEOUT, URL
+from config.config import DATE_FORMAT, DOWNLOAD_REQUEST_TIMEOUT, FILE_PREFIX, RAW_DATA_DIR, URL
+
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s | %(levelname)s | %(name)s | %(message)s"
@@ -21,19 +20,18 @@ logger = logging.getLogger(__name__)
 
 
 def download_json(url: str = URL) -> requests.Response:
-    response = requests.get(url, timeout=REQUEST_TIMEOUT)
+    response = requests.get(url, timeout=DOWNLOAD_REQUEST_TIMEOUT)
     return response
 
 
-def validate_response(response: requests.Response):
+def validate_response(response: requests.Response) -> None:
     response.raise_for_status()
 
 
-def save_raw_json(data, file) -> str:
-    save_dir = RAW_DATA_DIR
-    os.makedirs(save_dir, exist_ok=True)
+def save_raw_json(data: dict) -> str:
+    os.makedirs(RAW_DATA_DIR, exist_ok=True)
 
-    file_path = build_raw_file_path(FILE_PREFIX)
+    file_path = build_raw_file_path()
 
     with open(file_path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
@@ -41,17 +39,15 @@ def save_raw_json(data, file) -> str:
     return file_path
 
 
-def build_raw_file_path(file_prefix: str) -> str:
+def build_raw_file_path() -> str:
     date_str = datetime.now().strftime(DATE_FORMAT)
 
-    file_name = f"{file_prefix}_{date_str}.json"
+    file_name = f"{FILE_PREFIX}_{date_str}.json"
 
     return os.path.join(RAW_DATA_DIR, file_name)
 
 
-def run_pipeline():
-    file_path = build_raw_file_path(FILE_PREFIX)
-
+def run_pipeline() -> None:
     try:
         logger.info(f"Starting download of merger case data from source URL: {URL}")
 
@@ -71,13 +67,18 @@ def run_pipeline():
 
         data = response.json()
 
-        saved_file = save_raw_json(data, FILE_PREFIX)
+        logger.info(
+            f"Successfully parsed JSON payload "
+            f"containing {len(data):,} merger cases"
+        )
+
+        saved_file = save_raw_json(data)
 
         logger.info(f"Raw dataset successfully saved to file: {saved_file}")
 
         logger.info("Merger cases ingestion pipeline completed successfully")
 
-    except Exception as e:
+    except Exception:
         logger.exception("Pipeline failed")
         raise
 
