@@ -9,12 +9,9 @@ from datetime import datetime
 
 import requests
 
-from config.config import DATE_FORMAT, DOWNLOAD_REQUEST_TIMEOUT, FILE_PREFIX, RAW_DATA_DIR, URL
+from config.download_json_config import DATE_FORMAT, DOWNLOAD_REQUEST_TIMEOUT, FILE_PREFIX, RAW_DATA_DIR, URL
+from config.logging_config import configure_logging
 
-
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s | %(levelname)s | %(name)s | %(message)s"
-)
 
 logger = logging.getLogger(__name__)
 
@@ -40,9 +37,9 @@ def save_raw_json(data: dict) -> str:
 
 
 def build_raw_file_path() -> str:
-    date_str = datetime.now().strftime(DATE_FORMAT)
+    timestamp_str = datetime.now().strftime(DATE_FORMAT)
 
-    file_name = f"{FILE_PREFIX}_{date_str}.json"
+    file_name = f"{FILE_PREFIX}_{timestamp_str}.json"
 
     return os.path.join(RAW_DATA_DIR, file_name)
 
@@ -53,22 +50,17 @@ def run_pipeline() -> None:
 
         response = download_json()
 
-        logger.info(
-            f"Successfully received HTTP response from source URL "
-            f"(status_code={response.status_code})"
-        )
-
         validate_response(response)
 
         logger.info(
-            f"HTTP response validation completed successfully "
+            f"HTTP response validation completed"
             f"(status_code={response.status_code})"
         )
 
         data = response.json()
 
         logger.info(
-            f"Successfully parsed JSON payload "
+            f"Successfully parsed JSON payload"
             f"containing {len(data):,} merger cases"
         )
 
@@ -84,4 +76,5 @@ def run_pipeline() -> None:
 
 
 if __name__ == "__main__":
+    configure_logging()
     run_pipeline()
